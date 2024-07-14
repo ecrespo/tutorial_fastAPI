@@ -21,10 +21,6 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_NO_CACHE_DIR=1
 
 RUN pip install --upgrade pip --no-cache-dir  --disable-pip-version-check
-
-
-
-
 RUN pip3 install poetry --no-cache-dir  --disable-pip-version-check
 
 WORKDIR /app
@@ -36,17 +32,18 @@ RUN pip install -r requirements.txt --no-cache-dir  --disable-pip-version-check
 
 
 FROM python:3.11.7-slim-bookworm as app
+RUN pip install alembic
 WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
 COPY run.py /app/
 COPY .env /app/
-COPY app /app/app
+COPY app /app/app/
 
 ENV PYTHONPATH=/app
 RUN addgroup --system --gid 1001 app
 RUN adduser --system --uid 1001 --gid 1001 --no-create-home app
-USER app
-
+#USER app
 ENTRYPOINT ["python", "run.py"]
 EXPOSE 8000
+
