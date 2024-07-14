@@ -1,3 +1,4 @@
+import io
 from enum import Enum
 from pydantic import BaseModel
 
@@ -9,11 +10,28 @@ from fastapi import (
     File,
     UploadFile
 )
+import pandas as pd
+from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+
+from utils.FakeData import generate_fake_data_faker, generate_fake_data_mimesis, generate_fake_data
 
 
 class TipoUsuarioEnum(str, Enum):
     ESTANDARD = "estandard"
     ADMIN = "admin"
+
+class TipoGeneradorEnum(str, Enum):
+    FAKER = "faker"
+    MIMESIS = "mimesis"
+
+
+class TipoArchivoEnum(str, Enum):
+    #PDF = "pdf"
+    CSV = "csv"
+    XLSX = "xlsx"
 
 
 class Usuario(BaseModel):
@@ -102,3 +120,51 @@ async def upload_multiple_files(files: list[UploadFile] = File(...)):
         {"file_name": file.filename, "content_type": file.content_type}
         for file in files
     ]
+
+
+@app.post("/generate_data", response_class=FileResponse)
+async def generate_data(tipo_generador: TipoGeneradorEnum, cantidad: int, nombre_archivo: str, tipo_archivo: TipoArchivoEnum = TipoArchivoEnum.CSV):
+    print(f"Tipo generador: {tipo_generador.value}, Cantidad: {cantidad} , nombre: {nombre_archivo}, tipo archivo: {tipo_archivo.value}\nGenerando datos...")
+    data = generate_fake_data(cantidad, tipo_generador.value)
+
+    df = pd.DataFrame(data)
+    if tipo_archivo.value == "csv":
+        filename = f"{nombre_archivo}.csv"
+        stream = io.StringIO()
+        df.to_csv(stream, index=False)
+        response = StreamingResponse(iter([stream.getvalue()]), media_type="text/csv")
+        response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    if tipo_archivo.value == "xlsx":
+        filename = f"{nombre_archivo}.xlsx"
+        stream = io.BytesIO()
+        df.to_excel(stream, index=False, engine="openpyxl")
+        wb = Workbook()
+        ws = wb.active
+
+        # Convert DataFrame to worksheet
+        for r in dataframe_to_rows(df, index=False, header=True):
+            ws.append(r)
+
+            # Adjust the width of the columns
+            for column in ws.columns:
+                max_length = 0
+                column = [cell for cell in column]
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(cell.value)
+                    except:
+                        pass
+                adjusted_width = (max_length + 2)
+                ws.column_dimensions[column[0].column_letter].width = adjusted_width
+
+        # Save workbook to stream
+        wb.save(stream)
+        stream.seek(0)
+        wb.close()
+        # Prepare the response
+        response = StreamingResponse(iter([stream.getvalue()]),
+                                     media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+
+    return response
