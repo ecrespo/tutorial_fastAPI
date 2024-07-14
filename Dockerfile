@@ -32,9 +32,9 @@ RUN pip install -r requirements.txt --no-cache-dir  --disable-pip-version-check
 
 
 FROM python:3.12.4-bookworm AS app
-RUN pip install alembic
+
 WORKDIR /app
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 
 COPY run.py /app/
 COPY .env /app/
