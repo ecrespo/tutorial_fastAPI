@@ -14,6 +14,7 @@ from fastapi import (
     Query,
     Header,
     Response,
+    Request
 )
 import pandas as pd
 from fastapi.responses import StreamingResponse
@@ -201,3 +202,12 @@ async def get_header2(user_agent: str = Header(...)):
 @app.get("/get_cookie")
 async def get_cookie(hello: str | None = Cookie(None)):
     return {"hello": hello}
+
+
+@app.get("/get_url")
+async def get_request_object(request: Request):
+    return {"path": request.url.path}
+
+@app.get("/ger_request_params")
+async def get_request_params(request: Request):
+    return {"query_params": request.query_params, "request_body": request.body, "headers": request.headers, "cookies": request.cookies}

@@ -1,10 +1,10 @@
 services:
   app:
     build:
-      context: .
+      context: ./.
       dockerfile: Dockerfile
-    env_file:
-      - .env
+#    env_file:
+#      - .env
     container_name: app
     ports:
       - "8000:8000"
