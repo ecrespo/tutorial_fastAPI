@@ -1,7 +1,14 @@
 from enum import Enum
 from pydantic import BaseModel
 
-from fastapi import FastAPI, Path, Body
+from fastapi import (
+    FastAPI,
+    Path,
+    Body,
+    Form,
+    File,
+    UploadFile
+)
 
 
 class TipoUsuarioEnum(str, Enum):
@@ -72,3 +79,26 @@ async def crear_usuario2(usuario: Usuario, compania: Compania):
 @app.post("/usuarios/tres")
 async def create_user(usuario: Usuario, prioridad: int = Body(..., ge=1, le=3)):
     return {"usuario": usuario, "prioridad": prioridad}
+
+
+@app.post("/usuarios/cuatro")
+async def create_user4(nombre: str = Form(...), edad: int = Form(...)):
+    return {"nombre": nombre, "edad": edad}
+
+
+@app.post("/files")
+async def upload_file(file: bytes = File(...)):
+    return {"file_size": len(file)}
+
+
+@app.post("/files2")
+async def upload_file2(file: UploadFile = File(...)):
+    return {"file_name": file.filename, "content_type": file.content_type}
+
+
+@app.post("/files3")
+async def upload_multiple_files(files: list[UploadFile] = File(...)):
+    return [
+        {"file_name": file.filename, "content_type": file.content_type}
+        for file in files
+    ]
