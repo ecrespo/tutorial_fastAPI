@@ -10,6 +10,10 @@ from fastapi import (
     File,
     UploadFile,
     HTTPException,
+    Cookie,
+    Query,
+    Header,
+    Response,
 )
 import pandas as pd
 from fastapi.responses import StreamingResponse
@@ -182,3 +186,18 @@ async def process_data(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"There was an error uploading the file: {str(e)}")
         raise HTTPException(status_code=400, detail=f"There was an error uploading the file: {str(e)}")
+
+
+@app.get("/get_headers1")
+async def get_headers1(hello: str = Header(...)):
+    return {"hello": hello}
+
+
+@app.get("/get_headers2")
+async def get_header2(user_agent: str = Header(...)):
+    return {"user_agent": user_agent}
+
+
+@app.get("/get_cookie")
+async def get_cookie(hello: str | None = Cookie(None)):
+    return {"hello": hello}
