@@ -8,7 +8,8 @@ from fastapi import (
     Body,
     Form,
     File,
-    UploadFile
+    UploadFile,
+    HTTPException,
 )
 import pandas as pd
 from fastapi.responses import StreamingResponse
@@ -17,6 +18,8 @@ from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 
 from utils.FakeData import generate_fake_data_faker, generate_fake_data_mimesis, generate_fake_data
+from utils.LoggerSingleton import logger
+from utils.ProcessingFile import load_file
 
 
 class TipoUsuarioEnum(str, Enum):
@@ -168,3 +171,14 @@ async def generate_data(tipo_generador: TipoGeneradorEnum, cantidad: int, nombre
         response.headers["Content-Disposition"] = f"attachment; filename={filename}"
 
     return response
+
+
+@app.post("/process_data")
+async def process_data(file: UploadFile = File(...)):
+
+    try:
+        data, md5_file, filename = load_file(file)
+        return {"data": data, "md5_file": md5_file, "filename": filename}
+    except Exception as e:
+        logger.error(f"There was an error uploading the file: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"There was an error uploading the file: {str(e)}")
