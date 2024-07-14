@@ -43,7 +43,7 @@ COPY app /app/app/
 ENV PYTHONPATH=/app
 RUN addgroup --system --gid 1001 app
 RUN adduser --system --uid 1001 --gid 1001 --no-create-home app
-#USER app
+USER app
 ENTRYPOINT ["python", "run.py"]
 EXPOSE 8000
 

@@ -14,7 +14,8 @@ from fastapi import (
     Query,
     Header,
     Response,
-    Request
+    Request,
+    status
 )
 import pandas as pd
 from fastapi.responses import StreamingResponse
@@ -37,7 +38,6 @@ class TipoGeneradorEnum(str, Enum):
 
 
 class TipoArchivoEnum(str, Enum):
-    #PDF = "pdf"
     CSV = "csv"
     XLSX = "xlsx"
 
@@ -49,6 +49,24 @@ class Usuario(BaseModel):
 
 class Compania(BaseModel):
     nombre: str
+
+
+class Post(BaseModel):
+    title: str
+
+
+class Post2(BaseModel):
+    title: str
+    nb_views: int
+
+
+class PublicPost(BaseModel):
+    title: str
+
+
+class Post3(BaseModel):
+    title: str
+
 
 app = FastAPI()
 
@@ -208,6 +226,52 @@ async def get_cookie(hello: str | None = Cookie(None)):
 async def get_request_object(request: Request):
     return {"path": request.url.path}
 
+
 @app.get("/ger_request_params")
 async def get_request_params(request: Request):
     return {"query_params": request.query_params, "request_body": request.body, "headers": request.headers, "cookies": request.cookies}
+
+
+posts = {
+    1: Post(title="Hello", nb_views=100),
+}
+
+
+@app.post("/posts", status_code=status.HTTP_201_CREATED)
+async def create_post(post: Post):
+    posts[len(posts) + 1] = post
+    return post
+
+
+@app.delete("/posts/{_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_post(_id: int):
+    posts.pop(_id, None)
+    return None
+
+
+@app.get("/posts/{_id}")
+async def get_post(_id: int):
+    return posts[_id]
+
+
+posts2 = {
+    1: Post2(title="Hello", nb_views=100),
+}
+
+
+@app.get("/posts2/{_id}", response_model=PublicPost)
+async def get_post2(_id: int):
+    return posts2[_id]
+
+
+posts3 = {
+    1: Post3(title="Hello"),
+}
+
+
+@app.put("/posts/{_id}")
+async def update_or_create_post(_id: int, post: Post3, response: Response):
+    if _id not in posts3:
+        response.status_code = status.HTTP_201_CREATED
+    posts3[id] = post
+    return posts3[id]
