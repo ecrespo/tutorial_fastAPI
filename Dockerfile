@@ -39,6 +39,7 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY run.py /app/
 COPY .env /app/
 COPY app /app/app/
+COPY utils  /app/utils
 
 ENV PYTHONPATH=/app
 RUN addgroup --system --gid 1001 app
