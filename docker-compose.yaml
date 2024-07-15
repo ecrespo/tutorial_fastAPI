@@ -11,6 +11,9 @@ services:
     networks:
       - tutorial_fastapi_api
     restart: always
+    volumes:
+      - ./app:/app/app
+      - ./utils:/app/utils
 
 networks:
   tutorial_fastapi_api:

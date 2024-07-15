@@ -275,3 +275,42 @@ async def update_or_create_post(_id: int, post: Post3, response: Response):
         response.status_code = status.HTTP_201_CREATED
     posts3[id] = post
     return posts3[id]
+
+
+@app.get("/custom_cookie")
+async def custom_cookie(response: Response):
+    response.set_cookie("cookie-name", "cookie-value", max_age=86400)
+    return {"hello": "world"}
+
+
+@app.get("/custom_header")
+async def custom_header(response: Response):
+    response.headers["Custom-Header"] = "Custom-Header-Value"
+    return {"hello": "world"}
+
+
+@app.post("/password")
+async def check_password(password: str = Body(...), password_confirm: str = Body(...)):
+    if password != password_confirm:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": "Passwords don't match.",
+                "hints": [
+                    "Check the caps lock on your keyboard",
+                    "Try to make the password visible by clicking on the eye icon to check your typing",
+                ],
+            },
+        )
+    return {"message": "Passwords match."}
+
+
+
+@app.post("/password2")
+async def check_password2(password: str = Body(...), password_confirm: str = Body(...)):
+    if password != password_confirm:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Passwords don't match.",
+        )
+    return {"message": "Passwords match."}
