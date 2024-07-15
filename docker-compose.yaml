@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+#    env_file:
+#      - .env
+    container_name: app
+    ports:
+      - "8000:8000"
+    networks:
+      - tutorial_fastapi_api
+    restart: always
+
+networks:
+  tutorial_fastapi_api:
+    driver: bridge
