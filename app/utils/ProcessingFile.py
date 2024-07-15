@@ -2,10 +2,10 @@ import hashlib
 import io
 
 import pandas as pd
-from fastapi import UploadFile, HTTPException, File
+from fastapi import UploadFile, HTTPException
 
-from utils.LoggerSingleton import logger
-from utils.ValidationCSVFile import validation_content
+from app.utils.LoggerSingleton import logger
+from app.utils.ValidationCSVFile import validation_content
 
 
 def load_file(file: UploadFile) -> pd.DataFrame:

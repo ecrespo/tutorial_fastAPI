@@ -38,7 +38,8 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY run.py /app/
 COPY .env /app/
 COPY app /app/app/
-COPY utils  /app/utils
+COPY app/utils  /app/utils
+COPY app/assets /app/app/images
 ENV PYTHONPATH=/app
 RUN addgroup --system --gid 1001 app
 RUN adduser --system --uid 1001 --gid 1001 --no-create-home app
