@@ -11,21 +11,27 @@ from fastapi import (
     UploadFile,
     HTTPException,
     Cookie,
-    Query,
     Header,
     Response,
     Request,
     status
 )
 import pandas as pd
-from fastapi.responses import StreamingResponse
-from fastapi.responses import FileResponse
+from fastapi.responses import (
+    StreamingResponse,
+    HTMLResponse,
+    FileResponse,
+    PlainTextResponse,
+    JSONResponse,
+    RedirectResponse
+)
+from pathlib import Path as pathlibPath
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 
-from utils.FakeData import generate_fake_data_faker, generate_fake_data_mimesis, generate_fake_data
-from utils.LoggerSingleton import logger
-from utils.ProcessingFile import load_file
+from app.utils.FakeData import generate_fake_data
+from app.utils.LoggerSingleton import logger
+from app.utils.ProcessingFile import load_file
 
 
 class TipoUsuarioEnum(str, Enum):
@@ -275,3 +281,97 @@ async def update_or_create_post(_id: int, post: Post3, response: Response):
         response.status_code = status.HTTP_201_CREATED
     posts3[id] = post
     return posts3[id]
+
+
+@app.get("/custom_cookie")
+async def custom_cookie(response: Response):
+    response.set_cookie("cookie-name", "cookie-value", max_age=86400)
+    return {"hello": "world"}
+
+
+@app.get("/custom_header")
+async def custom_header(response: Response):
+    response.headers["Custom-Header"] = "Custom-Header-Value"
+    return {"hello": "world"}
+
+
+@app.post("/password")
+async def check_password(password: str = Body(...), password_confirm: str = Body(...)):
+    if password != password_confirm:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": "Passwords don't match.",
+                "hints": [
+                    "Check the caps lock on your keyboard",
+                    "Try to make the password visible by clicking on the eye icon to check your typing",
+                ],
+            },
+        )
+    return {"message": "Passwords match."}
+
+
+
+@app.post("/password2")
+async def check_password2(password: str = Body(...), password_confirm: str = Body(...)):
+    if password != password_confirm:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Passwords don't match.",
+        )
+    return {"message": "Passwords match."}
+
+
+@app.get("/texto", response_class=PlainTextResponse)
+async def texto():
+    return "Hola mundo!"
+
+
+@app.get("/html", response_class=HTMLResponse)
+async def html():
+    return """
+    <html>
+        <head>
+            <title>Some HTML in here</title>
+        </head>
+        <body>
+            <h1>Look ma! HTML!</h1>
+        </body>
+    </html>
+    """
+
+
+@app.get("/json", response_class=JSONResponse)
+async def response_json():
+    return {"message": "Hello, World!"}
+
+
+@app.get("/redirect")
+async def redirect():
+    return RedirectResponse(url="/json")
+
+
+@app.get("/redirect2")
+async def redirect2():
+    return RedirectResponse("/json", status_code=status.HTTP_301_MOVED_PERMANENTLY)
+
+
+
+@app.get("/xml")
+async def get_xml():
+    content = """<?xml version="1.0" encoding="UTF-8"?>
+        <Hola>Mundo</Hola>
+    """
+    return Response(content=content, media_type="application/xml")
+
+
+@app.get("/perro")
+async def get_dog():
+    parent_directory = pathlibPath(__file__).parent
+
+    root_directory = pathlibPath(__file__).parent.parent
+    picture_path = parent_directory / "app" / "assets" / "perro.png"
+    logger.info(f"Picture path: {picture_path}")
+    return FileResponse(picture_path)
+
+

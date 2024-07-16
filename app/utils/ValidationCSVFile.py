@@ -1,4 +1,4 @@
-from .ValidationMD5 import gen_md5_content
+from app.utils.ValidationMD5 import gen_md5_content
 
 
 # Define a function to validate the content of a file
