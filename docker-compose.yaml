@@ -1,20 +1,30 @@
 services:
-  app:
+  app1:
     build:
       context: .
-      dockerfile: Dockerfile
-#    env_file:
-#      - .env
-    container_name: app
+      dockerfile: Dockerfile_app1
+    container_name: app1
     ports:
       - "8000:8000"
     networks:
       - tutorial_fastapi_api
     restart: always
     volumes:
-      - ./app:/app/app
-      - ./utils:/app/utils
-      - ./assets:/app/app/assets
+      - "./app1:/app/app"
+
+  app2:
+    build:
+      context: .
+      dockerfile: Dockerfile_app2
+    container_name: app2
+    ports:
+      - "8001:8000"
+    networks:
+      - tutorial_fastapi_api
+    restart: always
+    volumes:
+      - "./app2:/app"
+
 
 networks:
   tutorial_fastapi_api:

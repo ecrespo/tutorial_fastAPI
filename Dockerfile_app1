@@ -35,11 +35,12 @@ FROM python:3.12.4-bookworm AS app
 WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 
-COPY run.py /app/
-COPY .env /app/
-COPY app /app/app/
-COPY app/utils  /app/utils
-COPY app/assets /app/app/images
+COPY app1/run.py /app/
+COPY app1/.env /app/
+COPY app1/utils  /app/app/utils
+COPY app1/assets /app/app/images
+COPY app1/api /app/app/api
+
 ENV PYTHONPATH=/app
 RUN addgroup --system --gid 1001 app
 RUN adduser --system --uid 1001 --gid 1001 --no-create-home app

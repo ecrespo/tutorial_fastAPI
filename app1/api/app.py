@@ -370,7 +370,7 @@ async def get_dog():
     parent_directory = pathlibPath(__file__).parent
 
     root_directory = pathlibPath(__file__).parent.parent
-    picture_path = parent_directory / "app" / "assets" / "perro.png"
+    picture_path = parent_directory / "app1" / "assets" / "perro.png"
     logger.info(f"Picture path: {picture_path}")
     return FileResponse(picture_path)
 
