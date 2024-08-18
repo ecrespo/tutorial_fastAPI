@@ -11,10 +11,23 @@ services:
     networks:
       - tutorial_fastapi_api
     restart: always
+    depends_on:
+      - db
     volumes:
       - ./app:/app/app
-      - ./utils:/app/utils
-      - ./assets:/app/app/assets
+
+  db:
+    image: mysql
+    container_name: db
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    ports:
+      - '3306:3306'
+    networks:
+      - tutorial_fastapi_api
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
 
 networks:
   tutorial_fastapi_api:
