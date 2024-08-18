@@ -3,8 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-#    env_file:
-#      - .env
+    env_file:
+      - .env
     container_name: app
     ports:
       - "8000:8000"
@@ -14,8 +14,17 @@ services:
     restart: always
     depends_on:
       - db
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - ./app:/app/app
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8000/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   db:
     image: mysql
@@ -29,6 +38,20 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
+
+  redis:
+    image: "redis:7.4.0-bookworm"
+    container_name: redis
+    networks:
+      - tutorial_fastapi_api
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 
 networks:
   tutorial_fastapi_api:

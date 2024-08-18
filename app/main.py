@@ -2,6 +2,12 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from app.controllers.index import user
 from app.utils.WebSocket import manager
+from app.utils.configs import REDIS_HOST, REDIS_PORT
+import redis
+
+#r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0)
+r = redis.Redis(connection_pool=pool)
 
 app = FastAPI(
 title="My API with documentation",
@@ -41,3 +47,21 @@ async def websocket_endpoint(websocket: WebSocket, client_id: int):
 async def get():
     with open("app/index.html") as f:
         return HTMLResponse(f.read())
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to FastAPI with Docker and Redis"}
+
+
+@app.get("/items/{item_id}")
+def read_item(item_id: int, q: str = None):
+    # Example of storing data in Redis
+    r.set(f"item_{item_id}", q or "No Query")
+    cached_value = r.get(f"item_{item_id}")
+    return {"item_id": item_id, "q": cached_value}
+
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
