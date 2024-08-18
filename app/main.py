@@ -1,9 +1,13 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+import redis
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.responses import HTMLResponse
+
 from app.controllers.index import user
 from app.utils.WebSocket import manager
 from app.utils.configs import REDIS_HOST, REDIS_PORT
-import redis
+
+from app.utils.producer import publish_message
 
 #r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
 pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0)
@@ -65,3 +69,9 @@ def read_item(item_id: int, q: str = None):
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+
+@app.post("/send-message/")
+def send_message(message: str, background_tasks: BackgroundTasks):
+    background_tasks.add_task(publish_message, message)
+    return {"message": "Message sent to RabbitMQ"}

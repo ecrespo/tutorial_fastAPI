@@ -15,6 +15,7 @@ services:
     depends_on:
       - db
       - redis
+      - rabbitmq
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -33,6 +34,8 @@ services:
       - ./data/mysql:/var/lib/mysql
     ports:
       - '3306:3306'
+    env_file:
+      - .env
     networks:
       - tutorial_fastapi_api
     environment:
@@ -42,6 +45,8 @@ services:
   redis:
     image: "redis:7.4.0-bookworm"
     container_name: redis
+    env_file:
+      - .env
     networks:
       - tutorial_fastapi_api
     ports:
@@ -51,6 +56,33 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  rabbitmq:
+    image: "rabbitmq:3.13.6-management"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    env_file:
+      - .env
+    networks:
+      - tutorial_fastapi_api
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+#    ports:
+#      - "9000:8000"
+    networks:
+      - tutorial_fastapi_api
+    command: [ "python", "app/utils/consumer.py" ]
+    depends_on:
+      - rabbitmq
 
 
 networks:
