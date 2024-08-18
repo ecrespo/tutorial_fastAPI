@@ -8,6 +8,7 @@ services:
     container_name: app
     ports:
       - "8000:8000"
+    command: python3 run.py
     networks:
       - tutorial_fastapi_api
     restart: always
