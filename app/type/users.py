@@ -2,7 +2,8 @@ import strawberry
 import typing
 
 from app.conn.db import conn
-from app.models.users import users
+from app.models.index import users
+#from app.models.users import users
 
 
 @strawberry.type
