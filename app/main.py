@@ -1,10 +1,35 @@
-import redis
-
-from fastapi import FastAPI
+import time
+from fastapi import FastAPI, Request
+from contextlib import asynccontextmanager
 
 from app.conn.database import init_db, close_db
 from app.controllers.Tasks import task_router
+from app.middlewares.log_requests import log_requests
 from app.utils.LoggerSingleton import logger
+
+
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Acción al iniciar
+    logger.info("Connecting to MongoDB...")
+    await init_db()
+    yield
+    # Acción al cerrar
+    logger.info("Disconnecting from MongoDB...")
+    await close_db()
+
+# @app.on_event("startup")
+# async def connect():
+#     logger.info("Connecting to MongoDB...")
+#     await init_db()
+#
+#
+# @app.on_event("shutdown")
+# async def disconnect():
+#     logger.info("Disconnecting from MongoDB...")
+#     await close_db()
 
 app = FastAPI(
 title="My API with documentation",
@@ -21,18 +46,12 @@ title="My API with documentation",
     },
     doc_url_prefix="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
-@app.on_event("startup")
-async def connect():
-    logger.info("Connecting to MongoDB...")
-    await init_db()
-
-
-@app.on_event("shutdown")
-async def disconnect():
-    logger.info("Disconnecting from MongoDB...")
-    await close_db()
+@app.middleware("http")
+async def log_requests_middleware(request: Request, call_next):
+    return await log_requests(request, call_next)
 
 
 @app.get("/")
