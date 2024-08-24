@@ -1,13 +1,17 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, Security, HTTPException, status
 from contextlib import asynccontextmanager
 from fastapi.responses import HTMLResponse, RedirectResponse
-
+import httpx
+import asyncio
 from app.conn.database import init_db, close_db
 from app.controllers.Tasks import task_router
 from app.middlewares.log_requests import log_requests
 from app.utils.LoggerSingleton import logger
+from app.utils.configs import API_KEY, URL_DB_API
+from app.utils.AsyncHttpx import get_client
+from app.middlewares.verify_api_key import APIKeyVerifier
 
-
+api_key_verifier = APIKeyVerifier([API_KEY])
 
 
 @asynccontextmanager
@@ -81,6 +85,37 @@ def read_root():
 async def health_check():
     logger.info("Health check request...")
     return {"status": "healthy"}
+
+
+@app.get("/hola")
+def hola(api_key: str = Security(api_key_verifier)) -> dict:
+    logger.info("Read hola request...")
+    return {"message": "Hola mundo!"}
+
+
+
+
+@app.get("/prueba")
+async def prueba(page: int = 0,client: httpx.AsyncClient = Depends(get_client),api_key: str = Security(api_key_verifier)):
+    logger.info("Read prueba request...")
+    try:
+        caracters_url = f"{URL_DB_API}/character/?page={page}"
+        response = await client.get(caracters_url,timeout=None)
+        response_json = response.json()
+
+        if response.status_code == 200:
+            return response_json["results"]
+        if response.status_code == 400:
+            message = response_json.get("mensajes", "Error en la solicitud")[0]["mensaje"]
+            logger.error(f"Error en la solicitud: {message}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+    except httpx.RequestError as e:
+        logger.error(f"Error en la solicitud: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error interno del servidor")
+    except httpx.ReadTimeout as e:
+        logger.error(f"Tiempo de espera excedido: {e}")
+        raise HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT, detail="Tiempo de espera excedido")
+
 
 
 app.include_router(task_router, prefix="/tasks")

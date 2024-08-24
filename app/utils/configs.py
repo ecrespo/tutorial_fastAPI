@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import AnyHttpUrl
 from functools import lru_cache
 
 from app.utils.LoggerSingleton import logger
@@ -10,6 +11,8 @@ class Settings(BaseSettings):
     MONGO_URI: str
     MONGO_INITDB_ROOT_USERNAME: str
     MONGO_INITDB_ROOT_PASSWORD: str
+    API_KEY: str
+    URL_DB_API: AnyHttpUrl
     # Load the settings from the .env file
     model_config = SettingsConfigDict(env_file=".env")
 
@@ -31,7 +34,7 @@ settings = get_settings()
 MONGO_URI = settings.MONGO_URI
 MONGO_INITDB_ROOT_USERNAME = settings.MONGO_INITDB_ROOT_USERNAME
 MONGO_INITDB_ROOT_PASSWORD = settings.MONGO_INITDB_ROOT_PASSWORD
-
-
+API_KEY = settings.API_KEY
+URL_DB_API = settings.URL_DB_API
 # Log that the settings have been loaded
 logger.info("Settings loaded")
