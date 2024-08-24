@@ -1,17 +1,10 @@
 import redis
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, BackgroundTasks
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI
 
-from app.controllers.index import user
-from app.utils.WebSocket import manager
-from app.utils.configs import REDIS_HOST, REDIS_PORT
-
-from app.utils.producer import publish_message
-
-#r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
-pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0)
-r = redis.Redis(connection_pool=pool)
+from app.conn.database import init_db, close_db
+from app.controllers.Tasks import task_router
+from app.utils.LoggerSingleton import logger
 
 app = FastAPI(
 title="My API with documentation",
@@ -30,48 +23,29 @@ title="My API with documentation",
     redoc_url="/redoc",
 )
 
-
-app.include_router(user)
-
-
-@app.websocket("/ws/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, client_id: int):
-    await manager.connect(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await manager.send_message(f"Client {client_id}: {data}", websocket)
-            await manager.broadcast(f"Client {client_id} says: {data}")
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        await manager.broadcast(f"Client {client_id} disconnected")
+@app.on_event("startup")
+async def connect():
+    logger.info("Connecting to MongoDB...")
+    await init_db()
 
 
-@app.get("/chat")
-async def get():
-    with open("app/index.html") as f:
-        return HTMLResponse(f.read())
+@app.on_event("shutdown")
+async def disconnect():
+    logger.info("Disconnecting from MongoDB...")
+    await close_db()
+
 
 @app.get("/")
 def read_root():
+    logger.info("Read root request...")
     return {"message": "Welcome to FastAPI with Docker and Redis"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
-    # Example of storing data in Redis
-    r.set(f"item_{item_id}", q or "No Query")
-    cached_value = r.get(f"item_{item_id}")
-    return {"item_id": item_id, "q": cached_value}
 
 
 
 @app.get("/health")
 async def health_check():
+    logger.info("Health check request...")
     return {"status": "healthy"}
 
 
-@app.post("/send-message/")
-def send_message(message: str, background_tasks: BackgroundTasks):
-    background_tasks.add_task(publish_message, message)
-    return {"message": "Message sent to RabbitMQ"}
+app.include_router(task_router, prefix="/tasks")

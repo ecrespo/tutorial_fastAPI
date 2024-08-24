@@ -7,12 +7,9 @@ from app.utils.LoggerSingleton import logger
 # Define a Settings class that inherits from BaseSettings
 class Settings(BaseSettings):
     # Define the attributes of the Settings class
-    MYSQL_ROOT_PASSWORD: str
-    MYSQL_DATABASE: str
-    REDIS_HOST: str
-    REDIS_PORT: int
-    RABBITMQ_DEFAULT_USER: str
-    RABBITMQ_DEFAULT_PASS: str
+    MONGO_URI: str
+    MONGO_INITDB_ROOT_USERNAME: str
+    MONGO_INITDB_ROOT_PASSWORD: str
     # Load the settings from the .env file
     model_config = SettingsConfigDict(env_file=".env")
 
@@ -31,11 +28,10 @@ def get_settings() -> Settings:
 settings = get_settings()
 
 # Assign the settings to variables
-MYSQL_ROOT_PASSWORD = settings.MYSQL_ROOT_PASSWORD
-MYSQL_DATABASE = settings.MYSQL_DATABASE
-REDIS_HOST = settings.REDIS_HOST
-REDIS_PORT = settings.REDIS_PORT
-RABBITMQ_DEFAULT_USER = settings.RABBITMQ_DEFAULT_USER
-RABBITMQ_DEFAULT_PASS = settings.RABBITMQ_DEFAULT_PASS
+MONGO_URI = settings.MONGO_URI
+MONGO_INITDB_ROOT_USERNAME = settings.MONGO_INITDB_ROOT_USERNAME
+MONGO_INITDB_ROOT_PASSWORD = settings.MONGO_INITDB_ROOT_PASSWORD
+
+
 # Log that the settings have been loaded
 logger.info("Settings loaded")

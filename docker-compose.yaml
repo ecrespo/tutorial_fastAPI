@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     env_file:
       - .env
+    environment:
+      - TZ=America/Caracas
     container_name: app
     ports:
       - "8000:8000"
@@ -14,11 +16,6 @@ services:
     restart: always
     depends_on:
       - db
-      - redis
-      - rabbitmq
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
     volumes:
       - ./app:/app/app
     healthcheck:
@@ -28,61 +25,47 @@ services:
       retries: 3
 
   db:
-    image: mysql
+    image: mongo:6.0.17
     container_name: db
+    ports:
+      - "27017:27017"
+    restart: always
+    networks:
+      - tutorial_fastapi_api
+#    volumes:
+#      - type: volume
+#        source: mongo-data
+#        target: /data/db
+#        volume:
+#          nocopy: true
+    environment:
+      - TZ=America/Caracas
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
-      - ./data/mysql:/var/lib/mysql
-    ports:
-      - '3306:3306'
-    env_file:
-      - .env
-    networks:
-      - tutorial_fastapi_api
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+        - ./data/db:/data/db
 
-  redis:
-    image: "redis:7.4.0-bookworm"
-    container_name: redis
-    env_file:
-      - .env
-    networks:
-      - tutorial_fastapi_api
-    ports:
-      - '6379:6379'
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+#  tests:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.tests
+#    env_file:
+#      - .env
+#    container_name: tests
+#    command: [ "pytest", "--maxfail=1", "--disable-warnings" ]
+#    depends_on:
+#      - app
+#    networks:
+#      - tutorial_fastapi_api
+#    volumes:
+#      - ./app:/app
+#      - ./tests:/tests
 
-  rabbitmq:
-    image: "rabbitmq:3.13.6-management"
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    env_file:
-      - .env
-    networks:
-      - tutorial_fastapi_api
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
 
-  consumer:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    env_file:
-      - .env
-#    ports:
-#      - "9000:8000"
-    networks:
-      - tutorial_fastapi_api
-    command: [ "python", "app/utils/consumer.py" ]
-    depends_on:
-      - rabbitmq
+volumes:
+  mongo-data:
+    driver: local
+
 
 
 networks:
