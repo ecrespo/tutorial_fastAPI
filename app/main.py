@@ -1,6 +1,6 @@
-import time
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.conn.database import init_db, close_db
 from app.controllers.Tasks import task_router
@@ -54,10 +54,26 @@ async def log_requests_middleware(request: Request, call_next):
     return await log_requests(request, call_next)
 
 
+@app.get("/bienvenida", response_class=HTMLResponse)
+def welcome():
+    logger.info("Read root request...")
+    html_content = """
+        <html>
+            <head>
+                <title>Welcome</title>
+            </head>
+            <body>
+                <h1>Welcome to FastAPI with Docker</h1>
+            </body>
+        </html>
+    """
+    return HTMLResponse(content=html_content)
+
+
 @app.get("/")
 def read_root():
     logger.info("Read root request...")
-    return {"message": "Welcome to FastAPI with Docker and Redis"}
+    return RedirectResponse(url="/redoc/")
 
 
 
