@@ -7,8 +7,8 @@ from app.utils.LoggerSingleton import logger
 
 class TaskRepository:
     @staticmethod
-    async def get_all_tasks() -> List[Task]:
-        return await Task.find_all().to_list()
+    async def get_all_tasks(page: int = 1, limit: int = 10) -> List[Task]:
+        return await Task.find_all().skip((page - 1) * limit).limit(limit).to_list()
 
     @staticmethod
     async def get_task_by_id(task_id: PydanticObjectId) -> Optional[Task]:

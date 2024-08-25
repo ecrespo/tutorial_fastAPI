@@ -14,9 +14,9 @@ task_router = APIRouter()
 
 
 @task_router.get("/",status_code=status.HTTP_200_OK)
-async def getalltasks() -> List[Task]:
+async def getalltasks(page: int = 1, limit: int = 10) -> List[Task]:
 
-    tasks = await TaskRepository.get_all_tasks()
+    tasks = await TaskRepository.get_all_tasks(page= page, limit = limit)
     return tasks
 
 
