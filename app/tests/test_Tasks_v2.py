@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
-from app.controllers import Tasks
+from app.controllers import TasksController
 from app.repositories.TaskRepository import TaskRepository
-from app.models.Tasks import Task
+from app.models.TasksModel import Task
 
 
 class TestTasks(unittest.TestCase):

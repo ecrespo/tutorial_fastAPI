@@ -5,7 +5,7 @@ from pydantic import Field
 
 class Task(Document):
     task_content: str = Field(max_length=400)
-    is_complete: bool = False
+    is_complete: bool = Field(default=False)
     date_created: datetime = Field(default_factory=datetime.now)
 
     class Settings:

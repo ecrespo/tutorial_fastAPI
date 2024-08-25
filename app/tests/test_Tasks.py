@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 from app.main import app
+from app.utils.LoggerSingleton import logger
 
 client = TestClient(app)
 
@@ -13,14 +14,7 @@ def test_read_health():
     assert response.status_code == 200
     assert response.json() == {"status": "healthy"}
 
-def test_create_item():
-    response = client.post(
-        "/tasks/",
-        json={"name": "Foo", "price": 45.2},
-    )
+def test_get_items():
+    response = client.get("/tasks/?page=1&limit=10")
     assert response.status_code == 200
-    assert response.json() == {
-        "name": "Foo",
-        "price": 45.2,
-        "id": 1,
-    }
+    logger.info(response.json())

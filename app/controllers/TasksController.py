@@ -8,9 +8,11 @@ from beanie import PydanticObjectId
 from app.schemas.TasksSchemas import TaskBase
 from app.utils.LoggerSingleton import logger
 from app.repositories.TaskRepository import TaskRepository
-from app.models.Tasks import Task
+from app.models.TasksModel import Task
 
-task_router = APIRouter()
+task_router = APIRouter(
+tags=["tasks"]
+)
 
 
 @task_router.get("/",status_code=status.HTTP_200_OK)

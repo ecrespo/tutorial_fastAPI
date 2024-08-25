@@ -1,8 +1,8 @@
 from typing import Optional, List
 from beanie import PydanticObjectId
 
-from app.models.Tasks import Task
-from app.utils.LoggerSingleton import logger
+from app.models.TasksModel import Task
+
 
 
 class TaskRepository:

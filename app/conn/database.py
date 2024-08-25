@@ -3,7 +3,8 @@ import motor.motor_asyncio
 
 from app.utils.LoggerSingleton import logger
 from app.utils.configs import MONGO_URI
-from app.models.Tasks import Task
+from app.models.TasksModel import Task
+from app.models.UsersModel import User
 
 
 class Database:
@@ -19,7 +20,7 @@ class Database:
 
 async def init_db():
     db_instance = Database()
-    await beanie.init_beanie(database=db_instance.client.db_name, document_models=[Task])
+    await beanie.init_beanie(database=db_instance.client.db_name, document_models=[Task,User])
 
 
 async def close_db():

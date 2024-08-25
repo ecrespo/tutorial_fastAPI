@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 
-from app.models.Tasks import Task
 
 
 class TaskBase(BaseModel):
