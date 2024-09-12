@@ -9,9 +9,13 @@ class Token(BaseModel):
     token_type: str
 
 
-class TokenData(BaseModel):
-    username: Optional[str] = None
 
+class TokenData(Document):
+    username: Optional[str] = None
+    token: Token
+
+    class Settings:
+        name = "token_database"
 
 
 
@@ -22,6 +26,7 @@ class User(Document):
     disabled: Optional[bool] = None
     hashed_password: str
     date_created: datetime = Field(default_factory=datetime.now)
+    updated_at: Optional[datetime] = None
 
     class Settings:
         name = "users_database"
