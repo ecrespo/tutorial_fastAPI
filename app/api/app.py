@@ -19,7 +19,7 @@ async def event_generator():
         await asyncio.sleep(5)
         yield f"Match Summary: {json.dumps(score)}\n\n"
 
-@route.get("/live-scores")
+@route.get("/live-scores", tags=["Live"],summary="Live Scores endpoint", description="Live Scores endpoint")
 async def live_scores_endpoint():
     return EventSourceResponse(event_generator())
 

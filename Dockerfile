@@ -36,7 +36,7 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 
 COPY run.py /app/
-COPY app /app/app/
+COPY app /app/
 
 ENV PYTHONPATH=/app
 RUN addgroup --system --gid 1001 app

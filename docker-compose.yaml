@@ -3,8 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    env_file:
-      - .env
+#    env_file:
+#      - .env
     environment:
       - TZ=America/Caracas
     container_name: app
@@ -14,10 +14,10 @@ services:
     networks:
       - tutorial_fastapi_api
     restart: always
-    depends_on:
-      - db
-    volumes:
-      - ./app:/app/app
+#    depends_on:
+#      - db
+#    volumes:
+#      - ./app:/app/app
 
 
 
