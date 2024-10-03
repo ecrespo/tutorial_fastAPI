@@ -1,26 +1,33 @@
 services:
-  app:
+  app_rabbitmq:
     build:
       context: .
       dockerfile: Dockerfile
-#    env_file:
-#      - .env
     environment:
       - TZ=America/Caracas
-    container_name: app
+    container_name: app_rabbitmq
     ports:
       - "8000:8000"
     command: python3 run.py
+    depends_on:
+      - rabbitmq
     networks:
-      - tutorial_fastapi_api
+      - tutorial_app_rabbitmq
     restart: always
-#    depends_on:
-#      - db
-#    volumes:
-#      - ./app:/app/app
+
+  rabbitmq:
+    image: "rabbitmq:4.0.2-alpine"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: myuser
+      RABBITMQ_DEFAULT_PASS: mypassword
+    networks:
+      - tutorial_app_rabbitmq
 
 
 
 networks:
-  tutorial_fastapi_api:
+  tutorial_app_rabbitmq:
     driver: bridge
