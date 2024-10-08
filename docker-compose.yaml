@@ -5,15 +5,31 @@ services:
       dockerfile: Dockerfile
     environment:
       - TZ=America/Caracas
+      - DATABASE_URL=postgresql://user:password@db/dbname
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq//
+      - REDIS_URL=redis://redis:6379/0
     container_name: app_rabbitmq
     ports:
       - "8000:8000"
     command: python3 run.py
     depends_on:
+      - db
       - rabbitmq
+      - redis
+    volumes:
+      - .:/app
     networks:
       - tutorial_app_rabbitmq
     restart: always
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dbname
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   rabbitmq:
     image: "rabbitmq:4.0.2-alpine"
@@ -26,7 +42,25 @@ services:
     networks:
       - tutorial_app_rabbitmq
 
+  redis:
+    image: redis:6-alpine
 
+  worker:
+    build: .
+    command: ["python", "worker.py"]
+    depends_on:
+      - rabbitmq
+      - redis
+      - db
+    environment:
+      - DATABASE_URL=postgresql://user:password@db/dbname
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq//
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - .:/app
+
+volumes:
+  postgres_data:
 
 networks:
   tutorial_app_rabbitmq:

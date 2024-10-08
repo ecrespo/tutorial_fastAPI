@@ -1,76 +1,74 @@
-import threading
-from fastapi import FastAPI
-import time
-import pika
+from fastapi import FastAPI, HTTPException, Depends
+import aioredis
+import httpx
+from sqlalchemy.orm import Session
+
+from app.models import Usuario, Post
+from app.schemas import UsuarioCreate, PostCreate
+from app.database import get_db
+from app.celery_app import celery
+from app.configs import settings
 
 app = FastAPI()
 
-
-def wait_for_rabbitmq_to_be_ready(host, user, password, retries=5, delay=5):
-    for i in range(retries):
-        try:
-            credentials = pika.PlainCredentials(user, password)
-            parameters = pika.ConnectionParameters(host=host, credentials=credentials)
-            connection = pika.BlockingConnection(parameters)
-            connection.close()
-            print(f"Successfully connected to RabbitMQ on attempt {i + 1}")
-            return
-        except pika.exceptions.AMQPConnectionError:
-            print(f"RabbitMQ not ready, attempt {i + 1} of {retries}")
-            time.sleep(delay)
-    raise Exception("Failed to connect to RabbitMQ after several retries")
+redis = aioredis.from_url(settings.redis_url)
 
 
-def get_rabbitmq_connection(host='rabbitmq', user='myuser', password='mypassword'):
-    credentials = pika.PlainCredentials(user, password)
-    parameters = pika.ConnectionParameters(host=host, credentials=credentials)
-    connection = pika.BlockingConnection(parameters)
-    channel = connection.channel()
-    return channel
-
-
-def consume_rabbitmq_messages():
+@celery.task
+def send_notification(post_id: int):
     try:
-        print("Attempting to consume messages from RabbitMQ")
-        channel = get_rabbitmq_connection()
-        print("Declaring queue as durable")
-        channel.queue_declare(queue='fastapi_queue', durable=True)
-
-        def callback(ch, method, properties, body):
-            print(f"Received {body}")
-            # Procesar el cuerpo del mensaje
-            print(f"Processed message: {body}")
-
-        print("Setting up basic consume")
-        channel.basic_consume(queue='fastapi_queue', on_message_callback=callback, auto_ack=True)
-        print("Starting to consume messages")
-        channel.start_consuming()
-    except Exception as e:
-        print(f"Failed to consume messages: {e}")
-        raise e
+        response = httpx.post(settings.notification_service_url, json={"post_id": post_id})
+        response.raise_for_status()
+    except httpx.RequestError as exc:
+        print(f"An error occurred while requesting {exc.request.url!r}.")
+    except httpx.HTTPStatusError as exc:
+        print(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
 
 
+@app.post("/usuarios/", response_model=UsuarioCreate)
+async def create_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
+    db_usuario = Usuario(**usuario.dict())
+    db.add(db_usuario)
+    db.commit()
+    db.refresh(db_usuario)
+    return db_usuario
 
-@app.on_event("startup")
-def startup_event():
-    print("FastAPI started")
-    # Verificar que RabbitMQ está listo antes de iniciar el consumidor
-    wait_for_rabbitmq_to_be_ready(host='rabbitmq', user='myuser', password='mypassword')
-    threading.Thread(target=consume_rabbitmq_messages, daemon=True).start()
+
+@app.get("/usuarios/{usuario_id}", response_model=UsuarioCreate)
+async def read_usuario(usuario_id: int, db: Session = Depends(get_db)):
+    cache_key = f"usuario:{usuario_id}"
+    cached_usuario = await redis.get(cache_key)
+    if cached_usuario:
+        return UsuarioCreate.parse_raw(cached_usuario)
+
+    db_usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if db_usuario is None:
+        raise HTTPException(status_code=404, detail="Usuario not found")
+
+    await redis.set(cache_key, db_usuario.json(), ex=60)
+    return db_usuario
 
 
-@app.get("/")
-def read_root():
-    return {"message": "Hello RabbitMQ with FastAPI"}
+@app.post("/posts/", response_model=PostCreate)
+async def create_post(post: PostCreate, db: Session = Depends(get_db)):
+    db_post = Post(**post.dict())
+    db.add(db_post)
+    db.commit()
+    db.refresh(db_post)
+    send_notification.delay(db_post.id)
+    return db_post
 
-@app.post("/send")
-def send_message(message: str):
-    try:
-        channel = get_rabbitmq_connection()
-        channel.queue_declare(queue='fastapi_queue', durable=True)
-        channel.basic_publish(exchange='', routing_key='fastapi_queue', body=message)
-        print(f"Sent message: {message}")
-        return {"status": "Message sent"}
-    except Exception as e:
-        print(f"Failed to send message: {e}")
-        return {"status": "Failed to send message"}
+
+@app.get("/posts/{post_id}", response_model=PostCreate)
+async def read_post(post_id: int, db: Session = Depends(get_db)):
+    cache_key = f"post:{post_id}"
+    cached_post = await redis.get(cache_key)
+    if cached_post:
+        return PostCreate.parse_raw(cached_post)
+
+    db_post = db.query(Post).filter(Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    await redis.set(cache_key, db_post.json(), ex=60)
+    return db_post
